@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEIA - Visão Estratégica de IA na Educação</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Preto (#000000), Vermelho (#E30613), Branco (#FFFFFF), Azul (#3B82F6), Verde (#22C55E), Amarelo (#FACC15), Cinza (#333333, #A9A9A9, #F8FAFC) -->
+    <!-- Application Structure Plan: A single-page dashboard application designed for a high-level executive audience. The structure is non-linear, facilitated by a sticky navigation bar, giving the user control over the information flow. It starts with a high-level vision (Hero), then dives into key sections: 'Desafios Atuais' (the 'why', with visual cards), 'Iniciativas Atuais' (the 'what', with interactive Farol-style cards and a modal for test examples), 'Índice de Maturidade' (the 'where we are vs. where we're going' with a radar chart and tabbed details), 'Governança Ágil' (the 'how', with a visual flow and RACI matrix), 'Laboratório de Inovação' (the 'what's next for innovation' with a creative, dynamic presentation), and 'Próximos Passos' (the final call to action). This structure is chosen to be direct, results-oriented, and visually engaging, demonstrating expertise rather than just stating it, while providing accessible depth for other stakeholders. -->
+    <!-- Visualization & Content Choices: 
+        - Hero Section: Report Info -> Overall vision and commitments. Goal -> Impact & Set Tone. Viz/Method -> Large heading, concise text, placeholder images for logos. Justification -> Immediate strong impression. Library/Method -> HTML/CSS.
+        - Desafios Atuais: Report Info -> Problems and AI solutions. Goal -> Inform & Convince. Viz/Method -> Cards with Unicode icons (PB). Interaction -> Visual separation of problem/solution. Justification -> Breaks text, highly scannable, visually links challenge to AI solution. Library/Method -> HTML/CSS.
+        - Iniciativas Atuais: Report Info -> Detailed initiatives. Goal -> Organize, Show Progress & Detail. Viz/Method -> Filterable cards with "Farol" status (text only, no progress bar). Interaction -> Filter buttons (audience/stage), Modal for detailed test examples (Feedback Formativo Síncrono). Justification -> Dynamic, allows quick overview or deep dive, proves ongoing work, aligns with "Farol" concept. Library/Method -> Vanilla JS for filtering and modal.
+        - Índice de Maturidade: Report Info -> Maturity levels (current vs. 12 months). Goal -> Compare & Show Growth. Viz/Method -> Radar Chart (Chart.js) with yellow (atual) and green (meta) colors. Interaction -> Tabbed content below chart for detailed category descriptions. Justification -> Radar chart is ideal for multi-dimensional comparison, tabs provide context without clutter. Library/Method -> Chart.js, Vanilla JS.
+        - Governança: Report Info -> Process flow, RACI matrix. Goal -> Explain Process & Roles. Viz/Method -> HTML/CSS visual flow diagram with Unicode icons (PB), clear RACI table with custom colored letters. Interaction -> Visual steps, clear table structure. Justification -> Simplifies complex governance into digestible visuals, proves structured approach. Library/Method -> HTML/CSS.
+        - Laboratório de Inovação: Report Info -> Innovation space. Goal -> Inspire & Detail. Viz/Method -> Creative card layout with key pillars, subtle hover animations. Justification -> Conveys innovation and dedicated space effectively, visually engaging. Library/Method -> HTML/CSS.
+        - Próximos Passos: Report Info -> Next steps. Goal -> Drive Action. Viz/Method -> Cards with Unicode icons (PB). Justification -> Clear, actionable, and visually distinct steps. Removed approval button/question. Library/Method -> HTML/CSS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #FFFFFF; /* Branco */
+            color: #333333; /* Cinza escuro para texto principal */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 450px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 4px;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #E30613; /* Vermelho */
+            border-bottom-color: #E30613; /* Vermelho */
+        }
+        .filter-btn.active {
+            background-color: #E30613; /* Vermelho */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .maturity-tab-btn.active {
+            color: #E30613; /* Vermelho */
+            border-bottom-color: #E30613; /* Vermelho */
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .icon {
+            font-size: 2.5rem; /* Large icon size */
+            margin-bottom: 0.75rem;
+            color: #000000; /* Preto para ícones */
+        }
+        .process-icon {
+            font-size: 2rem;
+            color: #000000; /* Preto para ícones de processo */
+            margin-bottom: 0.5rem;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 2.5rem; /* 40px */
+            border-radius: 0.75rem; /* 12px */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 90%;
+            max-width: 800px;
+            position: relative;
+            max-height: 90vh; /* Max height for scrollable content */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: #E30613; /* Vermelho */
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* RACI Specific Colors */
+        .raci-R { color: #E30613; font-weight: bold; } /* Vermelho */
+        .raci-A { color: #22C55E; font-weight: bold; } /* Verde */
+        .raci-C { color: #3B82F6; font-weight: bold; } /* Azul */
+        .raci-I { color: #FACC15; font-weight: bold; } /* Amarelo */
+
+        /* Flow specific styles for arrows */
+        .flow-arrow {
+            font-size: 3rem; /* Larger arrow */
+            color: #A9A9A9; /* Cinza claro */
+            margin: 0 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        @media (max-width: 767px) {
+            .flow-arrow {
+                transform: rotate(90deg); /* Rotate arrow for vertical flow on small screens */
+                margin: 0.5rem 0;
+            }
+        }
+
+        /* Neural background for Laboratório de Inovação */
+        .neural-bg {
+            background-color: #e2e8f0; /* A slightly darker gray for contrast */
+            background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header & Navigation -->
+    <header class="bg-black sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-center items-center">
+            <a href="#" class="text-3xl font-extrabold text-white">GEIA</a>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+
+        <!-- Hero Section -->
+        <section class="text-center py-12 md:py-20 bg-white">
+            <!-- Removed GEIA logo placeholder -->
+            <h2 class="text-4xl md:text-6xl font-extrabold text-gray-900 leading-tight">
+                A Nova Era da Educação Pública: <br class="hidden md:block"> <span class="text-red-700">Liderando com Inteligência Artificial</span>
+            </h2>
+            <p class="mt-6 max-w-3xl mx-auto text-lg text-gray-600">
+                A Inteligência Artificial é uma ferramenta poderosa para a evolução da educação pública. Nós acreditamos que a SEDUC pode se tornar referência nesta transformação, que já começou.
+            </p>
+            <h3 class="text-2xl font-bold text-gray-900 mb-6 mt-12">NOSSO COMPROMISSO</h3>
+            <div class="mt-8 grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                    <h4 class="text-xl font-bold text-gray-900">Otimização do Percurso Educacional</h4>
+                    <p class="mt-2 text-gray-600 text-sm">Atuação preditiva e personalizada para aprimorar a trajetória de alunos, docentes e servidores, garantindo o máximo valor e sucesso.</p>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                    <h4 class="text-xl font-bold text-gray-900">Escala e Qualidade</h4>
+                    <p class="mt-2 text-gray-600 text-sm">Levar as melhores práticas educacionais e pedagógicas a 3.5 milhões de alunos em 5.3 mil escolas, de forma padronizada e com excelência.</p>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                    <h4 class="text-xl font-bold text-gray-900">Decisões Inteligentes</h4>
+                    <p class="mt-2 text-gray-600 text-sm">Usar dados e inteligência para guiar cada passo da gestão, otimizando recursos e maximizando o impacto educacional.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 1: Desafios Atuais -->
+        <section id="desafios" class="py-16 bg-gray-100">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-gray-900">DESAFIOS ATUAIS E COMO A IA PODE AJUDAR</h3>
+                <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">A IA não é uma teoria, é a ferramenta que nos dará o domínio sobre os gargalos históricos da nossa rede, transformando complexidade em inteligência acionável.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 transition-transform hover:scale-105">
+                    <div class="icon">🔍</div>
+                    <h4 class="text-xl font-bold text-gray-900">Visão Fragmentada</h4>
+                    <p class="mt-2 text-gray-600">Dados dispersos impedem gestão e visão claras da nossa vasta rede.</p>
+                    <p class="mt-4 font-semibold text-red-700">→ Solução IA: Integração e análise preditiva para uma visão integrada e decisões estratégicas.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 transition-transform hover:scale-105">
+                    <div class="icon">⚙️</div>
+                    <h4 class="text-xl font-bold text-gray-900">Boas Práticas Isoladas</h4>
+                    <p class="mt-2 text-gray-600">Dificuldade em replicar o sucesso local para milhões de alunos.</p>
+                    <p class="mt-4 font-semibold text-red-700">→ Solução IA: Padronização e automação para multiplicar o sucesso por toda a rede.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 transition-transform hover:scale-105">
+                    <div class="icon">⏳</div>
+                    <h4 class="text-xl font-bold text-gray-900">Decisões Lentas</h4>
+                    <p class="mt-2 text-gray-600">Análises manuais atrasam ações e respostas em um ambiente dinâmico.</p>
+                    <p class="mt-4 font-semibold text-red-700">→ Solução IA: Processamento em tempo real para agilizar decisões baseadas em dados.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 transition-transform hover:scale-105">
+                    <div class="icon">🔗</div>
+                    <h4 class="text-xl font-bold text-gray-900">Iniciativas Dispersas</h4>
+                    <p class="mt-2 text-gray-600">Esforços pontuais sem coordenação central limitam o impacto.</p>
+                    <p class="mt-4 font-semibold text-red-700">→ Solução IA: Centralização e governança para garantir consistência e impacto massivo.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Iniciativas Atuais -->
+        <section id="iniciativas" class="py-16 bg-white">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-gray-900">IA em Ação: Nossas iniciativas</h3>
+                <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">A GEIA vem para organizar e trazer um olhar estratégico para as iniciativas já existentes, garantindo sinergia e otimização dos recursos.</p>
+            </div>
+            <div class="flex justify-center flex-wrap gap-3 mb-8" id="initiative-filters">
+                <button data-filter="all" class="filter-btn active px-4 py-2 rounded-full font-semibold transition-all">Todos</button>
+                <button data-filter="planejamento" class="filter-btn bg-white text-gray-700 px-4 py-2 rounded-full font-semibold border border-gray-300 transition-all">Planejamento</button>
+                <button data-filter="poc" class="filter-btn bg-white text-gray-700 px-4 py-2 rounded-full font-semibold border border-gray-300 transition-all">POC</button>
+                <button data-filter="projeto" class="filter-btn bg-white text-gray-700 px-4 py-2 rounded-full font-semibold border border-gray-300 transition-all">Projeto</button>
+                <button data-filter="melhoria-continua" class="filter-btn bg-white text-gray-700 px-4 py-2 rounded-full font-semibold border border-gray-300 transition-all">Melhoria Contínua</button>
+            </div>
+            <div id="initiatives-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Initiative cards will be injected here by JS -->
+            </div>
+        </section>
+
+        <!-- Modal for Initiative Details -->
+        <div id="initiativeModal" class="modal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h3 id="modalTitle" class="text-2xl font-bold text-gray-900 mb-4"></h3>
+                <p class="text-gray-600 mb-2"><span class="font-semibold">Sponsor:</span> <span id="modalSponsor"></span></p>
+                <p class="text-gray-600 mb-4"><span class="font-semibold">Estágio:</span> <span id="modalStage"></span></p>
+                <p class="text-gray-600 mb-4"><span class="font-semibold">Status Atualizado:</span> <span id="modalStatus"></span></p>
+                <h4 class="font-bold text-lg mb-2 text-gray-900">O que precisamos para evoluir:</h4>
+                <p id="modalNextStep" class="text-gray-700 mb-4"></p>
+                <div id="modalDetails" class="prose max-w-none text-gray-700"></div>
+            </div>
+        </div>
+
+        <!-- Section 3: Índice de Maturidade -->
+        <section id="maturidade" class="py-16 bg-gray-100">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-gray-900">Índice de Maturidade em IA</h3>
+                <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">Este é o nosso ponto de partida e a nossa meta para os próximos 12 meses. O gráfico representa nossa rota para um ecossistema de IA totalmente sob nosso domínio e otimizado.</p>
+            </div>
+            <div class="chart-container">
+                <canvas id="maturityChart"></canvas>
+            </div>
+            <div class="mt-12 max-w-4xl mx-auto">
+                <div class="flex justify-center border-b border-gray-200" id="maturity-tabs">
+                     <button data-tab="governanca" class="maturity-tab-btn px-6 py-3 font-semibold text-gray-600 border-b-2 border-transparent">Governança</button>
+                    <button data-tab="tecnologia" class="maturity-tab-btn px-6 py-3 font-semibold text-gray-600 border-b-2 border-transparent">Tecnologia</button>
+                    <button data-tab="pessoas" class="maturity-tab-btn px-6 py-3 font-semibold text-gray-600 border-b-2 border-transparent">Pessoas</button>
+                    <button data-tab="processos" class="maturity-tab-btn px-6 py-3 font-semibold text-gray-600 border-b-2 border-transparent">Processos</button>
+                    <button data-tab="dados" class="maturity-tab-btn px-6 py-3 font-semibold text-gray-600 border-b-2 border-transparent">Dados</button>
+                </div>
+                <div id="maturity-content" class="mt-6 p-6 bg-gray-50 rounded-lg text-center">
+                    <!-- Content will be injected here by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Governança Ágil -->
+        <section id="governanca" class="py-16 bg-white">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-gray-900">Governança Ágil e Transparente</h3>
+                <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">Nosso processo garante decisões alinhadas à estratégia e resultados confiáveis, testando exaustivamente antes de escalar qualquer solução, considerando a heterogeneidade da nossa rede.</p>
+            </div>
+            <div class="max-w-6xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-center items-center gap-4 text-center">
+                    <!-- Step 1 -->
+                    <div class="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm border border-gray-200 w-full md:w-1/6 min-w-[180px]">
+                        <div class="process-icon">📄</div>
+                        <p class="font-bold text-gray-900">Demanda Clara</p>
+                        <p class="text-sm text-gray-500">Recebemos e alinhamos as necessidades educacionais, considerando as particularidades de cada caso.</p>
+                    </div>
+                    <div class="flow-arrow hidden md:block">→</div>
+                    <!-- Step 2 -->
+                    <div class="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm border border-gray-200 w-full md:w-1/6 min-w-[180px]">
+                        <div class="process-icon">🎯</div>
+                        <p class="font-bold text-gray-900">Priorização Estratégica</p>
+                        <p class="text-sm text-gray-500">Focamos no que gera maior impacto e escalabilidade para a rede como um todo.</p>
+                    </div>
+                    <div class="flow-arrow hidden md:block">→</div>
+                    <!-- Step 3 -->
+                    <div class="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm border border-gray-200 w-full md:w-1/6 min-w-[180px]">
+                        <div class="process-icon">🔬</div>
+                        <p class="font-bold text-gray-900">Validação Rigorosa</p>
+                        <p class="text-sm text-gray-500">Testamos exaustivamente em ambientes controlados e representativos da nossa diversidade, garantindo a robustez da solução para a escala de São Paulo.</p>
+                    </div>
+                    <div class="flow-arrow hidden md:block">→</div>
+                    <!-- Step 4 -->
+                    <div class="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm border border-gray-200 w-full md:w-1/6 min-w-[180px]">
+                        <div class="process-icon">✅</div>
+                        <p class="font-bold text-gray-900">Aprovação</p>
+                        <p class="text-sm text-gray-500">Nosso Comitê Executivo garante decisões semanais alinhadas à estratégia.</p>
+                    </div>
+                    <div class="flow-arrow hidden md:block">→</div>
+                    <!-- Step 5 -->
+                    <div class="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm border border-gray-200 w-full md:w-1/6 min-w-[180px]">
+                        <div class="process-icon">🚀</div>
+                        <p class="font-bold text-gray-900">Escala Eficiente</p>
+                        <p class="text-sm text-gray-500">Levamos a solução validada e adaptada para toda a rede, com acompanhamento contínuo.</p>
+                    </div>
+                </div>
+
+                <div class="mt-12 text-center">
+                    <h4 class="text-2xl font-bold text-gray-900 mb-6">PAPÉIS E RESPONSABILIDADES</h4>
+                    <p class="text-lg text-gray-600 max-w-2xl mx-auto mb-8">Na Matriz RACI abaixo definimos as áreas-chave e as participação no processo para que as iniciativas e soluções tenham a qualidade esperada.</p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white rounded-lg shadow-md border border-gray-200">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-700 uppercase text-sm leading-normal">
+                                    <th class="py-3 px-6 text-left">Atividades Principais</th>
+                                    <th class="py-3 px-6 text-center">GEIA</th>
+                                    <th class="py-3 px-6 text-center">Áreas de Negócio</th>
+                                    <th class="py-3 px-6 text-center">Comitê Executivo</th>
+                                    <th class="py-3 px-6 text-center">PRODESP</th>
+                                    <th class="py-3 px-6 text-center">Parceiros</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-600 text-sm font-light">
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="py-3 px-6 text-left whitespace-nowrap">Priorização estratégica</td>
+                                    <td class="py-3 px-6 text-center raci-R">R</td>
+                                    <td class="py-3 px-6 text-center raci-C">C</td>
+                                    <td class="py-3 px-6 text-center raci-A">A</td>
+                                    <td class="py-3 px-6 text-center raci-C">C</td>
+                                    <td class="py-3 px-6 text-center raci-I">I</td>
+                                </tr>
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="py-3 px-6 text-left whitespace-nowrap">Definição de Escopo</td>
+                                    <td class="py-3 px-6 text-center raci-C">C</td>
+                                    <td class="py-3 px-6 text-center raci-R">R</td>
+                                    <td class="py-3 px-6 text-center raci-I">I</td>
+                                    <td class="py-3 px-6 text-center raci-I">I</td>
+                                    <td class="py-3 px-6 text-center raci-I">I</td>
+                                </tr>
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="py-3 px-6 text-left whitespace-nowrap">Desenvolvimento das iniciativas</td>
+                                    <td class="py-3 px-6 text-center raci-R">R</td>
+                                    <td class="py-3 px-6 text-center raci-A">A</td>
+                                    <td class="py-3 px-6 text-center raci-A">A</td>
+                                    <td class="py-3 px-6 text-center raci-R">R</td>
+                                    <td class="py-3 px-6 text-center raci-R">R</td>
+                                </tr>
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="py-3 px-6 text-left whitespace-nowrap">Aprovação técnica e ética</td>
+                                    <td class="py-3 px-6 text-center raci-C">C</td>
+                                    <td class="py-3 px-6 text-center raci-A">A</td>
+                                    <td class="py-3 px-6 text-center raci-R">R</td>
+                                    <td class="py-3 px-6 text-center raci-I">I</td>
+                                    <td class="py-3 px-6 text-center raci-I">I</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-6 text-left whitespace-nowrap">Gestão operacional em escala</td>
+                                    <td class="py-3 px-6 text-center raci-C">C</td>
+                                    <td class="py-3 px-6 text-center raci-R">R</td>
+                                    <td class="py-3 px-6 text-center raci-C">C</td>
+                                    <td class="py-3 px-6 text-center raci-I">I</td>
+                                    <td class="py-3 px-6 text-center raci-I">I</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-8 text-left max-w-md mx-auto bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h5 class="font-bold text-gray-900 mb-2">Legenda RACI:</h5>
+                        <p class="text-sm text-gray-700"><span class="raci-R">R</span> (Responsável): executa e conduz as atividades.</p>
+                        <p class="text-sm text-gray-700"><span class="raci-A">A</span> (Aprova): autoriza e toma decisões finais sobre a atividade.</p>
+                        <p class="text-sm text-gray-700"><span class="raci-C">C</span> (Consulta): fornece informações e orientações importantes para a atividade.</p>
+                        <p class="text-sm text-gray-700"><span class="raci-I">I</span> (Informa): recebe atualizações e informações sobre o andamento da atividade.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Laboratório de Inovação -->
+        <section id="laboratorio" class="py-16 neural-bg">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-gray-900">Laboratório de Inovação: Onde a IA Acontece com Segurança e Assertividade</h3>
+                <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">Nossa proposta é termos um ambiente dedicado à experimentação prática e controlada de IA e tecnologia, focado em resultados mensuráveis e aprendizado contínuo, sem impactar a operação da rede de forma real.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <div class="bg-white p-8 rounded-lg shadow-lg border border-gray-200 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                    <div class="icon">💡</div>
+                    <h4 class="text-xl font-bold text-gray-900">Espaço de Criação e Teste</h4>
+                    <p class="mt-2 text-gray-600">Ambiente seguro para experimentação prática de IA, com foco em resultados mensuráveis e aprendizado contínuo.</p>
+                </div>
+                <div class="bg-white p-8 rounded-lg shadow-lg border border-gray-200 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                    <div class="icon">🎯</div>
+                    <h4 class="text-xl font-bold text-gray-900">Pilotos Validados em Campo</h4>
+                    <p class="mt-2 text-gray-600">Conduzimos pilotos rápidos com validação direta em escolas representativas da nossa diversidade e porte, assegurando aplicabilidade e robustez.</p>
+                </div>
+                <div class="bg-white p-8 rounded-lg shadow-lg border border-gray-200 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                    <div class="icon">🤝</div>
+                    <h4 class="text-xl font-bold text-gray-900">Parcerias Estratégicas</h4>
+                    <p class="mt-2 text-gray-600">Experimentação alinhada a parcerias, rodando testes com o que há de mais inovador no âmbito da tecnologia.</p>
+                </div>
+                <div class="lg:col-span-3 text-center mt-8">
+                    <p class="text-lg text-gray-700 max-w-2xl mx-auto">A GEIA traz essa excelência para a SEDUC, adaptando-a e otimizando-a para a nossa realidade de milhões de alunos e milhares de escolas.</p>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Section 6: Próximos Passos -->
+        <section id="proximos-passos" class="py-20 bg-white">
+            <div class="text-center">
+                <h3 class="text-3xl font-bold text-gray-900">Próximos Passos: Compromisso, Transparência e Ação</h3>
+                <!-- Removed text below title as requested -->
+                <div class="mt-10 grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <div class="icon">📈</div>
+                        <h4 class="text-xl font-bold text-gray-900">1. Avanço nas Pendências</h4>
+                        <p class="mt-2 text-gray-600">Avanço nos itens de impedimento ou pendências das iniciativas.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <div class="icon">🏛️</div>
+                        <h4 class="text-xl font-bold text-gray-900">2. Formalização da GEIA</h4>
+                        <p class="mt-2 text-gray-600">Formalização da estrutura da GEIA junto à secretaria para consolidar a liderança.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg border border-gray-200">
+                        <div class="icon">🔄</div>
+                        <h4 class="text-xl font-bold text-gray-900">3. Acompanhamento Contínuo</h4>
+                        <p class="mt-2 text-gray-600">Implementação e acompanhamento de resultados e evolução contínua das iniciativas.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-gray-400 text-center p-6 mt-12">
+        <p class="text-lg font-bold text-white">GESTÃO ESTRATÉGICA DE IA</p>
+        <p class="text-sm mt-2">Secretaria da Educação do Estado de São Paulo</p>
+        <p class="text-sm">Contato: <a href="mailto:lilian.bueno@fde.sp.gov.br" class="text-gray-400 hover:text-white underline">lilian.bueno@fde.sp.gov.br</a></p>
+        <p class="text-sm mt-4">&copy; 2025 Todos os direitos reservados.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Data for initiatives
+            const initiatives = [
+                {
+                    title: 'Feedback Formativo Síncrono',
+                    audience: 'docentes',
+                    stage: 'POC',
+                    status: 'VERDE', // For Farol icon
+                    sponsor: 'Thaís Cavalheri',
+                    statusAtualizado: 'Resultados de primeiros testes apresentados para EFAPE, considerados satisfatórios para evolução da POC.',
+                    nextStep: 'Definir os critérios de sucesso e métricas que estarão apresentadas no protótipo.',
+                    details: `
+                        <div class="bg-white p-4 rounded-lg mb-4">
+                            <h5 class="font-bold text-md mt-4 mb-2 text-gray-900">O que não é possível avaliar via Transcrição</h5>
+                            <ul class="list-disc list-inside text-gray-700 ml-4">
+                                <li>Presença da câmera aberta ou fechada de fato – só possível ver na imagem quando não há menção.</li>
+                                <li>Multitarefas visuais (mexendo em outra aba, distrações).</li>
+                                <li>Qualidade real do áudio – mesmo que falas estejam completas, podem ter cortes perceptíveis no vídeo.</li>
+                                <li>Compartilhamento de tela, slides ou vídeos – exceto se verbalizado.</li>
+                                <li>Postura, expressões faciais, gestos ou entonação emocional – assim como reações que podem ser enviadas pelo Teams.</li>
+                                <li>Tempo exato de fala cronometrado por participante – a transcrição aproxima, mas o time especializado usa a gravação para cronometrar as pautas.</li>
+                                <li>Ambiente físico e ruídos não verbalizados – como latidos, buzinas, ruído de ventilador etc.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg">
+                            <h5 class="font-bold text-md mt-4 mb-2 text-gray-900">Comparativo CAFF x IA PEC – PM | Pauta Formativa 7</h5>
+                            <p class="font-bold text-gray-800 mt-4">Avaliação CAFF - 1 critério não atendido</p>
+                            <ul class="list-disc list-inside text-gray-700 ml-4">
+                                <li>Tempo da formação: A atividade teve duração de 1h18, enquanto o esperado para o Programa Multiplica é de 1h30. Sabemos que o tempo pode variar conforme o ritmo das discussões, mas vale a pena ficar atenta para garantir o aproveitamento completo do encontro.</li>
+                                <li>Câmeras desligadas: Em determinado momento (minuto 19:11), cerca de quatro participantes estavam com as câmeras desligadas. Sabemos que isso pode ocorrer por diferentes motivos, mas vale lembrar a importância de reforçar, no início de cada formação, a orientação de manter as câmeras abertas — uma prática que contribui para o vínculo e a participação ativa.</li>
+                                <li>Interação com os participantes: Apesar da boa condução e do engajamento geral, senti falta de perguntas disparadoras que pudessem incentivar ainda mais a participação dos mais silenciosos. Uma sugestão é chamá-los pelo nome e propor perguntas abertas que estimulem a reflexão, intercalando as participações ao longo da formação.</li>
+                            </ul>
+                            <p class="font-bold text-gray-800 mt-4">Avaliação IA</p>
+                            <ul class="list-disc list-inside text-gray-700 ml-4">
+                                <li>Dimensões: D1 2/3 · D2 1/3 · D3 3/3 · D4 3/3 · D5 3/3 · D6 3/3</li>
+                                <li>Pontuação geral: 14/18 (1 não atendido · 3 não avaliáveis)</li>
+                                <li>Pontos fortes: Estímulo constante à participação reflexiva; Conexão clara entre teoria e prática docente; Discussões produtivas e contextualizadas.</li>
+                                <li>Para melhorar: Iniciar e encerrar a pauta no tempo previsto.</li>
+                                <li>Justificativas: “...deixar o microfone fechado, por favor. E a Câmera aberta” → incentivo ao uso da câmera; “...quais podem ser os impactos negativos da inteligência artificial?” → pergunta reflexiva; “...eu uso bastante o copit para isso” → exemplo prático de uso de IA;</li>
+                                <li>Tempo da formação foi de 01:18h.</li>
+                                <li>Critérios não avaliáveis por transcrição (4pt): Participa exclusivamente da formação… (sem verbalização de multitarefa); Realiza a formação em ambiente iluminado e com enquadramento adequado de câmera; Compartilhamento de slides, vídeos ou outros recursos (não citados).</li>
+                            </ul>
+                        </div>
+                    `
+                },
+                {
+                    title: 'Feedback Formativo Presencial',
+                    audience: 'docentes',
+                    stage: 'POC',
+                    status: 'AMARELO',
+                    sponsor: 'A confirmar',
+                    statusAtualizado: 'Primeiras gravações realizadas com professores.',
+                    nextStep: 'Definir comitê pedagógico que vai definir os critérios de avaliação do material.',
+                    details: '<p>Primeiras gravações realizadas com professores. Necessário definir comitê pedagógico para critérios de avaliação do material.</p>'
+                },
+                {
+                    title: 'IA em CJ',
+                    audience: 'docentes',
+                    stage: 'Projeto',
+                    status: 'VERDE',
+                    sponsor: 'A confirmar',
+                    statusAtualizado: 'Após sucesso da POC, o projeto está sendo iniciado com o parceiro Kumulus.',
+                    nextStep: 'Definir data de kickoff e plano de trabalho inicial.',
+                    details: '<p>Após sucesso da POC, o projeto está sendo iniciado com o parceiro Kumulus.</p>'
+                },
+                {
+                    title: 'Zeladoria',
+                    audience: 'docentes',
+                    stage: 'POC',
+                    status: 'AMARELO',
+                    sponsor: 'A confirmar',
+                    statusAtualizado: 'Testes e captura de imagens estão sendo realizadas nas escolas selecionadas.',
+                    nextStep: 'Após a conclusão do teste, definição de critérios internos para avaliação do material.',
+                    details: '<p>Testes e captura de imagens estão sendo realizadas nas escolas selecionadas.</p>'
+                },
+                {
+                    title: 'Redação 2.0',
+                    audience: 'alunos',
+                    stage: 'Melhoria Contínua',
+                    status: 'VERDE',
+                    sponsor: 'Carol Cancio',
+                    statusAtualizado: 'Melhorias e critérios enviados pela área de negócio em 23/07.',
+                    nextStep: 'Planejar a execução das melhorias em backlog e roadmap de produto.',
+                    details: '<p>Melhorias e critérios enviados pela área de negócio em 23/07.</p>'
+                },
+                {
+                    title: 'Jornada Evasão Escolar',
+                    audience: 'alunos',
+                    stage: 'Planejamento',
+                    status: 'VERDE',
+                    sponsor: 'A confirmar',
+                    statusAtualizado: 'Critérios e métricas de sucesso foram definidas.',
+                    nextStep: 'Entendimento técnico sobre disponibilidade dos dados para consulta e avaliação de solução anterior que já teve eficácia no passado.',
+                    details: '<p>Critérios e métricas de sucesso foram definidas.</p>'
+                },
+                {
+                    title: 'CRM',
+                    audience: 'docentes',
+                    stage: 'POC',
+                    status: 'VERDE',
+                    sponsor: 'Rose',
+                    statusAtualizado: 'Definição de ferramenta para execução dos critérios definidos e consultas.',
+                    nextStep: 'A confirmar com o Mateus.',
+                    details: '<p>Definição de ferramenta para execução dos critérios definidos e consultas.</p>'
+                },
+                {
+                    title: 'PDA – Feedback sobre Plano de Aula',
+                    audience: 'docentes',
+                    stage: 'POC',
+                    status: 'VERDE',
+                    sponsor: 'Gal',
+                    statusAtualizado: 'Definição de amostra e critérios em andamento com a área de negócio.',
+                    nextStep: 'Receber esta base de conhecimento para início dos testes.',
+                    details: '<p>Definição de amostra e critérios em andamento com a área de negócio.</p>'
+                }
+            ];
+
+            const initiativesGrid = document.getElementById('initiatives-grid');
+            const initiativeModal = document.getElementById('initiativeModal');
+            const closeButton = document.querySelector('.close-button');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalSponsor = document.getElementById('modalSponsor');
+            const modalStage = document.getElementById('modalStage');
+            const modalStatus = document.getElementById('modalStatus');
+            const modalNextStep = document.getElementById('modalNextStep');
+            const modalDetails = document.getElementById('modalDetails');
+
+            function renderInitiatives(filter = 'all') {
+                initiativesGrid.innerHTML = '';
+                const filteredInitiatives = initiatives.filter(initiative => {
+                    if (filter === 'all') return true;
+                    if (['planejamento', 'poc', 'projeto', 'melhoria-continua'].includes(filter)) {
+                        return initiative.stage.toLowerCase().replace(' ', '-') === filter;
+                    }
+                    return initiative.audience === filter;
+                });
+
+                if (filteredInitiatives.length === 0) {
+                    initiativesGrid.innerHTML = `<p class="text-center text-gray-500 col-span-full">Nenhuma iniciativa encontrada para este filtro.</p>`;
+                    return;
+                }
+
+                filteredInitiatives.forEach(initiative => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-6 rounded-lg shadow-lg border border-gray-200 flex flex-col justify-between fade-in cursor-pointer hover:shadow-xl transition-shadow';
+                    
+                    let farolIcon = ''; 
+                    if (initiative.status === 'VERDE') {
+                        farolIcon = '<span class="text-green-500 text-2xl">●</span>'; // Green circle
+                    } else if (initiative.status === 'AMARELO') {
+                        farolIcon = '<span class="text-yellow-500 text-2xl">●</span>'; // Yellow circle
+                    }
+
+                    card.innerHTML = `
+                        <div>
+                            <span class="inline-block px-3 py-1 text-sm font-semibold rounded-full bg-gray-100 text-gray-800">${initiative.stage}</span>
+                            <h4 class="text-xl font-bold mt-4 text-gray-900">${initiative.title}</h4>
+                            <p class="mt-4 text-sm font-semibold">${farolIcon}</p>
+                        </div>
+                    `;
+                    card.addEventListener('click', () => openModal(initiative));
+                    initiativesGrid.appendChild(card);
+                });
+            }
+            
+            function openModal(initiative) {
+                modalTitle.textContent = initiative.title;
+                modalSponsor.textContent = initiative.sponsor;
+                modalStage.textContent = initiative.stage;
+                modalStatus.textContent = initiative.statusAtualizado; // Use the new field
+                modalNextStep.textContent = initiative.nextStep;
+                modalDetails.innerHTML = initiative.details || '<p>Nenhum detalhe adicional disponível para esta iniciativa.</p>';
+                initiativeModal.style.display = 'flex';
+            }
+
+            closeButton.addEventListener('click', () => {
+                initiativeModal.style.display = 'none';
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target === initiativeModal) {
+                    initiativeModal.style.display = 'none';
+                }
+            });
+
+            document.getElementById('initiative-filters').addEventListener('click', (e) => {
+                if (e.target.classList.contains('filter-btn')) {
+                    document.querySelectorAll('#initiative-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    renderInitiatives(e.target.dataset.filter);
+                }
+            });
+
+            renderInitiatives();
+
+            // Maturity Chart
+            const maturityData = {
+                labels: ['Governança', 'Tecnologia', 'Pessoas', 'Processos', 'Dados'],
+                datasets: [
+                    {
+                        label: 'Atual',
+                        data: [1, 2, 2, 1, 2],
+                        backgroundColor: 'rgba(252, 211, 77, 0.2)', /* Amarelo claro */
+                        borderColor: 'rgba(252, 211, 77, 1)', /* Amarelo */
+                        pointBackgroundColor: 'rgba(252, 211, 77, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(252, 211, 77, 1)'
+                    },
+                    {
+                        label: 'Meta 12 Meses',
+                        data: [3, 3, 3, 3, 3],
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)', /* Verde claro */
+                        borderColor: 'rgba(34, 197, 94, 1)', /* Verde */
+                        pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(34, 197, 94, 1)'
+                    }
+                ]
+            };
+            const maturityConfig = {
+                type: 'radar',
+                data: maturityData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    elements: {
+                        line: {
+                            borderWidth: 3
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: false
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 4,
+                            pointLabels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#333333' /* Preto para rótulos */
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#333333' /* Preto para rótulos da legenda */
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': Nível ';
+                                    }
+                                    if (context.parsed.r !== null) {
+                                        label += context.parsed.r;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                },
+            };
+            new Chart(document.getElementById('maturityChart'), maturityConfig);
+
+            // Maturity Tabs
+            const maturityTabsData = {
+                governanca: {
+                    title: 'Governança: Decisões estruturadas e ágeis',
+                    description: 'Sair de um modelo reativo para uma estrutura de decisões centralizada, ágil e baseada em critérios claros, garantindo alinhamento estratégico e velocidade. A governança ainda está em estágio inicial, considerando que a área de gestão está surgindo agora.'
+                },
+                tecnologia: {
+                    title: 'Tecnologia: Infraestrutura robusta e integrada',
+                    description: 'Evoluir de sistemas isolados para uma plataforma de dados unificada e escalável, capaz de suportar as demandas de IA em toda a rede.'
+                },
+                pessoas: {
+                    title: 'Pessoas: Equipes treinadas e capacitadas',
+                    description: 'Capacitar nossas equipes técnicas e pedagógicas para utilizar e desenvolver soluções de IA, criando uma cultura de inovação baseada em dados. O time e as pessoas ainda são enxutos para a quantidade de iniciativas, mas temos uma licitação aprovada para melhorar este cenário.'
+                },
+                processos: {
+                    title: 'Processos: Padronização, eficiência e escalabilidade',
+                    description: 'Transformar processos manuais e fragmentados em fluxos de trabalho automatizados e eficientes, permitindo a replicação de boas práticas em larga escala. Processos sobre IA estão pouco definidos e ainda em estágio inicial.'
+                },
+                dados: {
+                    title: 'Dados: Integração, qualidade e segurança',
+                    description: 'Garantir que os dados sejam integrados, confiáveis e seguros, formando a base sólida para todas as análises e modelos de IA. A SEDUC possui base de dados organizada em relação à outras secretarias, mas tem melhorias a fazer na utilização desta base.'
+                }
+            };
+
+            const maturityContent = document.getElementById('maturity-content');
+            const maturityTabsContainer = document.getElementById('maturity-tabs');
+
+            function renderMaturityContent(tabKey) {
+                const data = maturityTabsData[tabKey];
+                maturityContent.innerHTML = `
+                    <h4 class="text-xl font-bold text-gray-900">${data.title}</h4>
+                    <p class="mt-2 text-gray-600">${data.description}</p>
+                `;
+                maturityContent.classList.remove('fade-in');
+                void maturityContent.offsetWidth; // Trigger reflow
+                maturityContent.classList.add('fade-in');
+            }
+
+            maturityTabsContainer.addEventListener('click', e => {
+                if (e.target.classList.contains('maturity-tab-btn')) {
+                    document.querySelectorAll('.maturity-tab-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    renderMaturityContent(e.target.dataset.tab);
+                }
+            });
+            
+            document.querySelector('.maturity-tab-btn[data-tab="governanca"]').classList.add('active');
+            renderMaturityContent('governanca');
+
+
+            // Nav link active state on scroll
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            window.onscroll = () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.classList.add('active');
+                    }
+                });
+            };
+        });
+    </script>
+</body>
+</html>
